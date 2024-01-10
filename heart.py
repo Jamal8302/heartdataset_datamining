@@ -1,132 +1,92 @@
 
 import streamlit as st
-import base64
-import sklearn
+import pandas as pd
 import numpy as np
-import pickle as pkl
-from sklearn.preprocessing import MinMaxScaler
-scal=MinMaxScaler()
-
-#Load the saved model
-model=pkl.load(open("KNN.pkl","rb"))
+import pickle 
 
 
-st.set_page_config(page_title="Healthy Heart App",page_icon="⚕️",layout="centered",initial_sidebar_state="expanded")
+st.sidebar.header('User Input Features')
 
+# collects user input features into dataframe
 
-def preprocess(age,sex,cp,trestbps,restecg,chol,fbs,thalach,exang,oldpeak,slope,ca,thal ):   
+def user_input_features():
+    age = st.sidebar.number_input('Enter your age: ')
+    
+    sex = st.sidebar.selectbox('Sex',(0,1))
+    cp = st.sidebar.selectbox('Chest pain type',(0,1))
+    trtbps = st.sidebar.number_input('Resting blood preasure: ')
+    chol = st.sidebar.number_input('Serum cholesterol in mg/dl: ')
+    fbs = st.sidebar.selectbox('Fasting blood sugar',(0,1))
+    restech = st.sidebar.number_input('Resting electrocardiographic results: ')
+    tha = st.sidebar.number_input('Maximum heart rate achieved: ')
+    exng = st.sidebar.selectbox('Exercise induced angina',(0,1))
+    old = st.sidebar.number_input('oldpeak: ')
+    slp = st.sidebar.number_input('he slope of the peak exercise ST segmen: ')
+    ca = st.sidebar.selectbox('number of major vessels',(0,1,2,3))
+    thall = st.sidebar.selectbox('thal',(0,1,2))
+    
+    data = {'age' : age,
+            'sex' : sex,
+            'cp' : cp,
+            'trtbps' : trtbps,
+            'chol' : chol,
+            'fbs' : fbs,
+            'restech' : restech,
+            'tha' : tha,
+            'exng' : exng,
+            'oldpeak' : old,
+            'slp': slp,
+            'ca' : ca,
+            'thall' : thall,
+                 }
+    
+    features = pd.DataFrame(data, index=[0])
+    return features
+input_df = user_input_features()
+
+#combines user input features with entire dataset
+# this will be useful for the encoding phase
+
+heart_dataset = pd.read_csv('Heart Dataset.csv')
+heart_dataset = heart_dataset.drop(columns=['output'])
+
+df = pd.concat([input_df,heart_dataset],axis=0)
+
+# encoding of ordinal features
+#
+
+df = pd.get_dummies(df, columns = ['sex','cp','fbs','restech','exng','slp','ca','thall'])
  
-    
-    # Pre-processing user input   
-    if sex=="male":
-        sex=1 
-    else: sex=0
-    
-    
-    if cp=="Typical angina":
-        cp=0
-    elif cp=="Atypical angina":
-        cp=1
-    elif cp=="Non-anginal pain":
-        cp=2
-    elif cp=="Asymptomatic":
-        cp=2
-    
-    if exang=="Yes":
-        exang=1
-    elif exang=="No":
-        exang=0
+df = df[:1] # select only the first row(the user inpu data)
  
-    if fbs=="Yes":
-        fbs=1
-    elif fbs=="No":
-        fbs=0
+st.write(input_df)
  
-    if slope=="Upsloping: better heart rate with excercise(uncommon)":
-        slope=0
-    elif slope=="Flatsloping: minimal change(typical healthy heart)":
-          slope=1
-    elif slope=="Downsloping: signs of unhealthy heart":
-        slope=2  
+ # reads in saved classification model
  
-    if thal=="fixed defect: used to be defect but ok now":
-        thal=6
-    elif thal=="reversable defect: no proper blood movement when excercising":
-        thal=7
-    elif thal=="normal":
-        thal=2.31
+load_clf = pickle.load(open('KNN.pkl', 'rb'))
 
-    if restecg=="Nothing to note":
-        restecg=0
-    elif restecg=="ST-T Wave abnormality":
-        restecg=1
-    elif restecg=="Possible or definite left ventricular hypertrophy":
-        restecg=2
+# apply model to make prediction
+prediction = load_clf.predict(df)
+prediction_proba  = load_clf.predict_proba(df)
 
+st.subheader('Prediction')
+st.write(prediction)
 
-    user_input=[age,sex,cp,trestbps,restecg,chol,fbs,thalach,exang,oldpeak,slope,ca,thal]
-    user_input=np.array(user_input)
-    user_input=user_input.reshape(1,-1)
-    user_input=scal.fit_transform(user_input)
-    prediction = model(user_input)
-
-    return prediction
-
+st.subheader('Prediction Probabilitiy')
+st.write(prediction_proba)
+  
+    
+    
+            
+            
+            
+            
+            
+            
+        
+            
+            
     
 
-       
-    # front end elements of the web page 
-html_temp = """ 
-    <div style ="background-color:pink;padding:13px"> 
-    <h1 style ="color:black;text-align:center;">Healthy Heart App</h1> 
-    </div> 
-    """
-      
-# display the front end aspect
-st.markdown(html_temp, unsafe_allow_html = True) 
-st.subheader('')
-      
-# following lines create boxes in which user can enter data required to make prediction
-age=st.selectbox ("Age",range(1,121,1))
-sex = st.radio("Select Gender: ", ('male', 'female'))
-cp = st.selectbox('Chest Pain Type',("Typical angina","Atypical angina","Non-anginal pain","Asymptomatic")) 
-trestbps=st.selectbox('Resting Blood Sugar',range(1,500,1))
-restecg=st.selectbox('Resting Electrocardiographic Results',("Nothing to note","ST-T Wave abnormality","Possible or definite left ventricular hypertrophy"))
-chol=st.selectbox('Serum Cholestoral in mg/dl',range(1,1000,1))
-fbs=st.radio("Fasting Blood Sugar higher than 120 mg/dl", ['Yes','No'])
-thalach=st.selectbox('Maximum Heart Rate Achieved',range(1,300,1))
-exang=st.selectbox('Exercise Induced Angina',["Yes","No"])
-oldpeak=st.number_input('Oldpeak')
-slope = st.selectbox('Heart Rate Slope',("Upsloping: better heart rate with excercise(uncommon)","Flatsloping: minimal change(typical healthy heart)","Downsloping: signs of unhealthy heart"))
-ca=st.selectbox('Number of Major Vessels Colored by Flourosopy',range(0,5,1))
-thal=st.selectbox('Thalium Stress Result',range(1,8,1))
 
-
-#user_input=preprocess(sex,cp,exang, fbs, slope, thal )
-pred=preprocess(age,sex,cp,trestbps,restecg,chol,fbs,thalach,exang,oldpeak,slope,ca,thal)
-
-
-
-if st.button("Predict"):    
-  if pred[0] == 0:
-    st.error('Warning! You have high risk of getting a heart attack!')
-    
-  else:
-    st.success('You have lower risk of getting a heart disease!')
-    
-   
-
-st.sidebar.subheader("About App")
-
-st.sidebar.info("This web app is helps you to find out whether you are at a risk of developing a heart disease.")
-st.sidebar.info("Enter the required fields and click on the 'Predict' button to check whether you have a healthy heart")
-st.sidebar.info("Don't forget to rate this app")
-
-
-
-feedback = st.sidebar.slider('How much would you rate this app?',min_value=0,max_value=5,step=1)
-
-if feedback:
-  st.header("Thank you for rating the app!")
-  st.info("Caution: This is just a prediction and not doctoral advice. Kindly see a doctor if you feel the symptoms persist.") 
 
