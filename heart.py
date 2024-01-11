@@ -5,25 +5,25 @@ import numpy as np
 import matplotlib.pyplot as plt 
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from pandas_profiling import ProfileReport
+from ydata_profiling import ProfileReport
 from streamlit_pandas_profiling import st_profile_report
 import seaborn as sns 
 import pickle 
+
 
 #import model 
 knn = pickle.load(open('KNN.pkl','rb'))
 
 #load dataset
 data = pd.read_csv('Heart Dataset.csv')
-
 #data = data.drop(data.columns[0],axis=1)
 
-st.title('Aplikasi Heart Dataset')
+st.title('Heart App')
 
 html_layout1 = """
 <br>
-<div style="background-color:red ; padding:2px">
-<h2 style="color:white;text-align:center;font-size:35px"><b>Heart Diases Checkup</b></h2>
+<div style="background-color:pink ; padding:2px">
+<h2 style="color:white;text-align:center;font-size:35px"><b>Heart Check Up</b></h2>
 </div>
 <br>
 <br>
@@ -36,7 +36,7 @@ st.sidebar.header('Data Pasien')
 if st.checkbox("Tentang Dataset"):
     html_layout2 ="""
     <br>
-    <p>Ini adalah Heart Dataset</p>
+    <p>Ini adalah dataset Heart</p>
     """
     st.markdown(html_layout2,unsafe_allow_html=True)
     st.subheader('Dataset')
@@ -74,57 +74,55 @@ if st.checkbox('Train-Test Dataset'):
     st.write(y_test.shape)
 
 def user_report():
-    age=st.selectbox ("Age",range(1,121,1))
-    sex = st.radio("Select Gender: ", ('male', 'female'))
-    cp = st.selectbox('Chest Pain Type',("Typical angina","Atypical angina","Non-anginal pain","Asymptomatic")) 
-    trtbps=st.selectbox('Resting Blood Sugar',range(1,500,1))
-    restecg=st.selectbox('Resting Electrocardiographic Results',("Nothing to note","ST-T Wave abnormality","Possible or definite left ventricular hypertrophy"))
-    chol=st.selectbox('Serum Cholestoral in mg/dl',range(1,1000,1))
-    fbs=st.radio("Fasting Blood Sugar higher than 120 mg/dl", ['Yes','No'])
-    thalachh=st.selectbox('Maximum Heart Rate Achieved',range(1,300,1))
-    exng=st.selectbox('Exercise Induced Angina',["Yes","No"])
-    oldpeak=st.number_input('Oldpeak')
-    slp = st.selectbox('Heart Rate Slope',("Upsloping: better heart rate with excercise(uncommon)","Flatsloping: minimal change(typical healthy heart)","Downsloping: signs of unhealthy heart"))
-    caa=st.selectbox('Number of Major Vessels Colored by Flourosopy',range(0,5,1))
-    thall=st.selectbox('Thalium Stress Result',range(1,8,1))
+
+    age = st.sidebar.number_input('Enter your age: ')
+    sex  = st.sidebar.selectbox('Sex',(0,1))
+    cp = st.sidebar.selectbox('Chest pain type',(0,1,2,3))
+    trtbps = st.sidebar.number_input('Resting blood pressure: ')
+    chol = st.sidebar.number_input('Serum cholestoral in mg/dl: ')
+    fbs = st.sidebar.selectbox('Fasting blood sugar',(0,1))
+    restecg = st.sidebar.number_input('Resting electrocardiographic results: ')
+    thalachh = st.sidebar.number_input('Maximum heart rate achieved: ')
+    exng = st.sidebar.selectbox('Exercise induced angina: ',(0,1))
+    oldpeak = st.sidebar.number_input('oldpeak ')
+    slp = st.sidebar.number_input('he slope of the peak exercise ST segmen: ')
+    caa = st.sidebar.selectbox('number of major vessels',(0,1,2,3))
+    thall = st.sidebar.selectbox('thal',(0,1,2))
     
     user_report_data = {
-        'age':age,
+        'Umur':age,
         'sex':sex,
-        'cp':cp,
-        'trtbps':trtbps,
-        'chol':chol,
-        'fbs':fbs,
-        'restecg':restecg,
-        'thalachh':thalachh,
-        'exng' : exng,
-        'oldpeak' : oldpeak,
-        'slp': slp,
-        'caa' : caa,
-        'thall' : thall,
-        
+        'Chest Pain Type':cp,
+        'Resting Blood Pressure':trtbps,
+        'Serum Cholestrol':chol,
+        'Fasting Blood Sugar':fbs,
+        'resting electrocardiographic':restecg,
+        'maximum heart rate achieved':thalachh,
+        'exercise induced angina':exng,
+        'Previous Peak':oldpeak,
+        'Slope':slp,
+        'number of major vessels':caa,
+        'Thal Rate':thall,
     }
     report_data = pd.DataFrame(user_report_data,index=[0])
     return report_data
 
 #Data Pasion
 user_data = user_report()
-st.subheader('Data Pasien')
+st.subheader('Patient Data')
 st.write(user_data)
 
 user_result = knn.predict(user_data)
 knn_score = accuracy_score(y_test,knn.predict(X_test))
 
 #output
-st.subheader('Hasilnya adalah : ')
+st.subheader('result is : ')
 output=''
 if user_result[0]==0:
-    output='Kamu Aman'
+    output='you are save'
 else:
-    output ='Kamu terkena heart diases'
+    output ='You have heart disease'
 st.title(output)
-st.subheader('Model yang digunakan : \n'+option)
+st.subheader('Used Model : \n'+option)
 st.subheader('Accuracy : ')
 st.write(str(knn_score*100)+'%')
-
-
