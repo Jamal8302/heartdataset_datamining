@@ -18,7 +18,10 @@ knn = pickle.load(open('KNN.pkl','rb'))
 data = pd.read_csv('Heart Dataset.csv')
 #data = data.drop(data.columns[0],axis=1)
 
-st.title('Heart App')
+
+st.set_page_config(page_title="Healthy Heart App",page_icon="⚕️",layout="centered",initial_sidebar_state="expanded")
+
+st.title('Heart App',)
 
 html_layout1 = """
 <br>
@@ -126,3 +129,9 @@ st.title(output)
 st.subheader('Used Model : \n'+option)
 st.subheader('Accuracy : ')
 st.write(str(knn_score*100)+'%')
+
+st.subheader("About App")
+
+st.info("This web app is helps you to find out whether you are at a risk of developing a heart disease.")
+st.info("Enter the required fields and click on the 'Predict' button to check whether you have a healthy heart")
+st.info("Don't forget to rate this app")
